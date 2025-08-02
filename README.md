@@ -2,6 +2,8 @@
 
 「支出は感情になる」をコンセプトにした新感覚の支出管理アプリです。世界中どこで使っても自動で円換算され、支出が増えるたびにあなたの分身の人生が変わっていきます。
 
+> ✨ **新機能追加！** 設定機能、データエクスポート/インポート、詳細なバリデーション、レスポンシブデザインなど多数の改良を行いました。詳細は [IMPROVEMENTS.md](./IMPROVEMENTS.md) をご覧ください。
+
 ## ✨ 特徴
 
 ### 🎯 核心機能
@@ -33,8 +35,8 @@
 
 1. リポジトリをクローン
 ```bash
-git clone <repository-url>
-cd moneymood
+git clone https://github.com/siwa0006/financial-tracker-with-currency-converter.git
+cd financial-tracker-with-currency-converter
 ```
 
 2. 依存関係をインストール
@@ -47,12 +49,54 @@ npm install
 npm run dev
 ```
 
-4. ブラウザで `http://localhost:3000` を開く
+4. ブラウザで `http://localhost:5173` を開く
 
 ### ビルド
 ```bash
 npm run build
 ```
+
+## 🌐 Vercelでのデプロイ方法
+
+### 簡単デプロイ（推奨）
+
+1. **Vercel CLI をインストール**
+```bash
+npm i -g vercel
+```
+
+2. **Vercelにログイン**
+```bash
+vercel login
+```
+→ ブラウザが開いてGitHubでログインできます
+
+3. **デプロイ実行**
+```bash
+vercel
+```
+→ 質問が出たら以下のように答えてください：
+- `Set up and deploy?` → **Y** を入力
+- `Link to existing project?` → **N** を入力  
+- `Project name?` → そのまま **Enter**（またはお好きな名前）
+- `Directory?` → **./** を入力
+
+4. **完了！**
+デプロイが完了すると URL が表示されます：
+```
+✅ Production: https://your-project.vercel.app
+```
+
+### 更新時のデプロイ
+```bash
+vercel --prod
+```
+
+### GitHubからの自動デプロイ設定
+1. [Vercel Dashboard](https://vercel.com/dashboard) にアクセス
+2. "New Project" をクリック
+3. GitHubリポジトリを連携
+4. 以降、GitHubにpushするたびに自動デプロイされます
 
 ## 🛠️ 技術スタック
 
@@ -66,19 +110,24 @@ npm run build
 
 ```
 src/
-├── components/          # Reactコンポーネント
-│   ├── LifeAnimation.tsx    # ライフステートアニメーション
-│   ├── ExpenseForm.tsx      # 支出入力フォーム
-│   └── ExpenseHistory.tsx   # 支出履歴
+├── pages/              # ページコンポーネント
+│   ├── Dashboard.tsx       # ダッシュボードページ
+│   └── Settings.tsx        # 設定ページ
+├── components/         # Reactコンポーネント
+│   ├── LifeAnimation.tsx   # ライフステートアニメーション
+│   ├── ExpenseForm.tsx     # 支出入力フォーム
+│   └── ExpenseHistory.tsx  # 支出履歴
 ├── services/           # APIサービス
 │   └── currencyApi.ts      # 為替レート取得
-├── types/             # TypeScript型定義
+├── styles/             # スタイルファイル
+│   └── App.css             # メインスタイル
+├── types/              # TypeScript型定義
 │   └── index.ts
-├── utils/             # ユーティリティ関数
+├── utils/              # ユーティリティ関数
 │   └── lifeStateCalculator.ts
-├── App.tsx           # メインアプリケーション
-├── main.tsx          # エントリーポイント
-└── index.css         # グローバルスタイル
+├── App.tsx             # メインアプリケーション
+├── main.tsx            # エントリーポイント
+└── index.css           # グローバルスタイル
 ```
 
 ## 🎨 デザイン

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Trash2, Edit, Calendar, DollarSign } from 'lucide-react';
 import { Expense, EXPENSE_CATEGORIES } from '../types';
 
@@ -18,21 +18,28 @@ const ExpenseHistory: React.FC<ExpenseHistoryProps> = ({
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
 
-  // 選択された月の支出をフィルタリング
-  const filteredExpenses = expenses.filter(expense => 
-    expense.date.startsWith(selectedMonth)
+  // 選択された月の支出をフィルタリング（パフォーマンス最適化）
+  const filteredExpenses = useMemo(() => 
+    expenses.filter(expense => expense.date.startsWith(selectedMonth)),
+    [expenses, selectedMonth]
   );
 
-  // 月別の合計支出を計算
-  const monthlyTotal = filteredExpenses.reduce((sum, expense) => 
-    sum + expense.convertedAmount, 0
-  );
+  // 月別の合計支出と統計を計算（パフォーマンス最適化）
+  const { monthlyTotal, categoryTotals } = useMemo(() => {
+    const total = filteredExpenses.reduce((sum, expense) => 
+      sum + expense.convertedAmount, 0
+    );
+    
+    const categories = filteredExpenses.reduce((acc, expense) => {
+      acc[expense.category] = (acc[expense.category] || 0) + expense.convertedAmount;
+      return acc;
+    }, {} as Record<string, number>);
 
-  // カテゴリ別の支出を集計
-  const categoryTotals = filteredExpenses.reduce((acc, expense) => {
-    acc[expense.category] = (acc[expense.category] || 0) + expense.convertedAmount;
-    return acc;
-  }, {} as Record<string, number>);
+    return {
+      monthlyTotal: total,
+      categoryTotals: categories
+    };
+  }, [filteredExpenses]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -68,7 +75,8 @@ const ExpenseHistory: React.FC<ExpenseHistoryProps> = ({
           .history-title {
             font-size: 24px;
             font-weight: bold;
-            color: white;
+            color: #ffffff;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
           }
           
           .month-selector {
@@ -79,16 +87,18 @@ const ExpenseHistory: React.FC<ExpenseHistoryProps> = ({
           
           .month-input {
             padding: 8px 12px;
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.4);
             border-radius: 6px;
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
+            background: rgba(255, 255, 255, 0.15);
+            color: #ffffff;
             font-size: 14px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
           }
           
           .month-input:focus {
             outline: none;
             border-color: #4CAF50;
+            background: rgba(255, 255, 255, 0.2);
           }
           
           .monthly-summary {
@@ -106,15 +116,17 @@ const ExpenseHistory: React.FC<ExpenseHistoryProps> = ({
           }
           
           .summary-label {
-            color: rgba(255, 255, 255, 0.8);
+            color: rgba(255, 255, 255, 0.9);
             font-size: 14px;
             margin-bottom: 5px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
           }
           
           .summary-value {
-            color: white;
+            color: #ffffff;
             font-size: 20px;
             font-weight: bold;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
           }
           
           .expense-list {
@@ -145,15 +157,17 @@ const ExpenseHistory: React.FC<ExpenseHistoryProps> = ({
           .expense-amount {
             font-size: 18px;
             font-weight: bold;
-            color: white;
+            color: #ffffff;
             margin-bottom: 5px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
           }
           
           .expense-details {
             display: flex;
             gap: 15px;
-            color: rgba(255, 255, 255, 0.7);
+            color: rgba(255, 255, 255, 0.85);
             font-size: 14px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
           }
           
           .expense-actions {
@@ -198,10 +212,11 @@ const ExpenseHistory: React.FC<ExpenseHistoryProps> = ({
           }
           
           .chart-title {
-            color: white;
+            color: #ffffff;
             font-size: 18px;
             font-weight: bold;
             margin-bottom: 15px;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
           }
           
           .category-item {
@@ -213,19 +228,153 @@ const ExpenseHistory: React.FC<ExpenseHistoryProps> = ({
           }
           
           .category-name {
-            color: white;
+            color: #ffffff;
             font-size: 14px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
           }
           
           .category-amount {
-            color: rgba(255, 255, 255, 0.8);
+            color: rgba(255, 255, 255, 0.9);
             font-size: 14px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
           }
           
           .empty-state {
             text-align: center;
             color: rgba(255, 255, 255, 0.6);
             padding: 40px 20px;
+          }
+          
+          /* レスポンシブ対応 */
+          @media (max-width: 768px) {
+            .expense-history {
+              padding: 20px;
+              margin: 15px 0;
+            }
+            
+            .history-header {
+              flex-direction: column;
+              align-items: flex-start;
+              gap: 10px;
+            }
+            
+            .history-title {
+              font-size: 20px;
+            }
+            
+            .monthly-summary {
+              grid-template-columns: 1fr;
+              gap: 10px;
+            }
+            
+            .expense-item {
+              flex-direction: column;
+              align-items: flex-start;
+              gap: 10px;
+              padding: 12px;
+            }
+            
+            .expense-actions {
+              align-self: flex-end;
+            }
+            
+            .category-chart {
+              padding: 15px;
+            }
+            
+            .chart-title {
+              font-size: 16px;
+            }
+          }
+          
+          @media (max-width: 480px) {
+            .expense-history {
+              padding: 15px;
+              margin: 10px 0;
+            }
+            
+            .history-title {
+              font-size: 18px;
+            }
+            
+            .month-input {
+              font-size: 13px;
+              padding: 6px 10px;
+            }
+            
+            .summary-card {
+              padding: 12px;
+            }
+            
+            .summary-label {
+              font-size: 13px;
+            }
+            
+            .summary-value {
+              font-size: 18px;
+            }
+            
+            .expense-list {
+              max-height: 350px;
+            }
+            
+            .expense-item {
+              padding: 10px;
+              margin-bottom: 8px;
+            }
+            
+            .expense-amount {
+              font-size: 16px;
+            }
+            
+            .expense-details {
+              font-size: 13px;
+              flex-wrap: wrap;
+              gap: 8px;
+            }
+            
+            .action-button {
+              padding: 6px;
+            }
+            
+            .category-chart {
+              padding: 12px;
+            }
+            
+            .chart-title {
+              font-size: 15px;
+            }
+            
+            .category-name,
+            .category-amount {
+              font-size: 13px;
+            }
+            
+            .empty-state {
+              padding: 30px 15px;
+            }
+          }
+          
+          @media (max-width: 360px) {
+            .expense-history {
+              padding: 12px;
+            }
+            
+            .history-title {
+              font-size: 16px;
+            }
+            
+            .summary-value {
+              font-size: 16px;
+            }
+            
+            .expense-amount {
+              font-size: 15px;
+            }
+            
+            .expense-details {
+              font-size: 12px;
+            }
           }
         `}
       </style>
