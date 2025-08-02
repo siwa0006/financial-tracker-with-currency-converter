@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Heart, TrendingUp, Settings } from 'lucide-react';
-import { Expense, LifeState } from './types';
+import { Expense, LifeState, AppSettings, DEFAULT_SETTINGS } from './types';
 import { LifeStateCalculator } from './utils/lifeStateCalculator';
-import LifeAnimation from './components/LifeAnimation';
-import ExpenseForm from './components/ExpenseForm';
+import Dashboard from './pages/Dashboard';
 import ExpenseHistory from './components/ExpenseHistory';
+import SettingsPage from './pages/Settings';
+import './styles/App.css';
 
 const App: React.FC = () => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -15,14 +16,22 @@ const App: React.FC = () => {
     animation: 'luxury-apartment'
   });
   const [activeTab, setActiveTab] = useState<'dashboard' | 'history' | 'settings'>('dashboard');
+  const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
 
-  // ローカルストレージから支出データを読み込み
+  // ローカルストレージから支出データと設定を読み込み
   useEffect(() => {
     const savedExpenses = localStorage.getItem('moneymood-expenses');
+    const savedSettings = localStorage.getItem('moneymood-settings');
+    
     if (savedExpenses) {
       const parsedExpenses = JSON.parse(savedExpenses);
       setExpenses(parsedExpenses);
       updateLifeState(parsedExpenses);
+    }
+    
+    if (savedSettings) {
+      const parsedSettings = JSON.parse(savedSettings);
+      setSettings({ ...DEFAULT_SETTINGS, ...parsedSettings });
     }
   }, []);
 
@@ -31,6 +40,11 @@ const App: React.FC = () => {
     localStorage.setItem('moneymood-expenses', JSON.stringify(expenses));
     updateLifeState(expenses);
   }, [expenses]);
+
+  // 設定が変更されたらローカルストレージに保存
+  useEffect(() => {
+    localStorage.setItem('moneymood-settings', JSON.stringify(settings));
+  }, [settings]);
 
   const updateLifeState = (currentExpenses: Expense[]) => {
     const totalExpense = currentExpenses.reduce((sum, expense) => 
@@ -73,165 +87,63 @@ const App: React.FC = () => {
     }
   };
 
+  const handleSettingChange = (key: keyof AppSettings, value: any) => {
+    setSettings(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleNestedSettingChange = (parentKey: keyof AppSettings, childKey: string, value: any) => {
+    setSettings(prev => ({
+      ...prev,
+      [parentKey]: {
+        ...(prev[parentKey] as any),
+        [childKey]: value
+      }
+    }));
+  };
+
+  const exportData = () => {
+    const data = {
+      expenses,
+      settings,
+      exportDate: new Date().toISOString(),
+      version: '1.0'
+    };
+    
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `moneymood-backup-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const importData = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target?.result as string);
+        if (data.expenses && Array.isArray(data.expenses)) {
+          setExpenses(data.expenses);
+        }
+        if (data.settings) {
+          setSettings({ ...DEFAULT_SETTINGS, ...data.settings });
+        }
+        alert('データのインポートが完了しました！');
+      } catch (error) {
+        alert('ファイルの読み込みに失敗しました。正しいフォーマットのファイルを選択してください。');
+      }
+    };
+    reader.readAsText(file);
+  };
+
   return (
     <div className="app">
-      <style>
-        {`
-          .app {
-            min-height: 100vh;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 20px;
-          }
-          
-          .app-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 20px;
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            overflow: hidden;
-          }
-          
-          .app-header {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 30px;
-            text-align: center;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-          }
-          
-          .app-title {
-            font-size: 36px;
-            font-weight: bold;
-            color: white;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-          }
-          
-          .app-subtitle {
-            color: rgba(255, 255, 255, 0.8);
-            font-size: 18px;
-            margin-bottom: 20px;
-          }
-          
-          .tab-navigation {
-            display: flex;
-            background: rgba(255, 255, 255, 0.1);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-          }
-          
-          .tab-button {
-            flex: 1;
-            padding: 20px;
-            background: none;
-            border: none;
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 16px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-          }
-          
-          .tab-button.active {
-            color: white;
-            background: rgba(255, 255, 255, 0.1);
-            border-bottom: 3px solid #4CAF50;
-          }
-          
-          .tab-button:hover {
-            color: white;
-            background: rgba(255, 255, 255, 0.05);
-          }
-          
-          .tab-content {
-            padding: 30px;
-            min-height: 500px;
-          }
-          
-          .dashboard-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 30px;
-            margin-bottom: 30px;
-          }
-          
-          .stats-cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-          }
-          
-          .stat-card {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            padding: 20px;
-            text-align: center;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-          }
-          
-          .stat-value {
-            font-size: 28px;
-            font-weight: bold;
-            color: white;
-            margin-bottom: 5px;
-          }
-          
-          .stat-label {
-            color: rgba(255, 255, 255, 0.8);
-            font-size: 14px;
-          }
-          
-          .settings-section {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            padding: 25px;
-            margin: 20px 0;
-          }
-          
-          .settings-title {
-            color: white;
-            font-size: 20px;
-            font-weight: bold;
-            margin-bottom: 15px;
-          }
-          
-          .danger-button {
-            background: linear-gradient(45deg, #F44336, #D32F2F);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-          }
-          
-          .danger-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(244, 67, 54, 0.4);
-          }
-          
-          @media (max-width: 768px) {
-            .dashboard-grid {
-              grid-template-columns: 1fr;
-            }
-            
-            .app-title {
-              font-size: 28px;
-            }
-            
-            .tab-content {
-              padding: 20px;
-            }
-          }
-        `}
-      </style>
 
       <div className="app-container">
         <header className="app-header">
@@ -265,33 +177,11 @@ const App: React.FC = () => {
 
         <main className="tab-content">
           {activeTab === 'dashboard' && (
-            <div>
-              <div className="stats-cards">
-                <div className="stat-card">
-                  <div className="stat-value">¥{lifeState.totalExpense.toLocaleString()}</div>
-                  <div className="stat-label">総支出</div>
-                </div>
-                <div className="stat-card">
-                  <div className="stat-value">{expenses.length}</div>
-                  <div className="stat-label">支出件数</div>
-                </div>
-                <div className="stat-card">
-                  <div className="stat-value">
-                    ¥{expenses.length > 0 ? (lifeState.totalExpense / expenses.length).toLocaleString() : '0'}
-                  </div>
-                  <div className="stat-label">平均支出</div>
-                </div>
-              </div>
-
-              <div className="dashboard-grid">
-                <div>
-                  <LifeAnimation lifeState={lifeState} />
-                </div>
-                <div>
-                  <ExpenseForm onAddExpense={handleAddExpense} />
-                </div>
-              </div>
-            </div>
+            <Dashboard
+              lifeState={lifeState}
+              onAddExpense={handleAddExpense}
+              defaultCurrency={settings.defaultCurrency}
+            />
           )}
 
           {activeTab === 'history' && (
@@ -303,36 +193,16 @@ const App: React.FC = () => {
           )}
 
           {activeTab === 'settings' && (
-            <div>
-              <div className="settings-section">
-                <h3 className="settings-title">⚙️ アプリ設定</h3>
-                <p style={{ color: 'rgba(255, 255, 255, 0.8)', marginBottom: '20px' }}>
-                  アプリの設定やデータ管理を行います。
-                </p>
-                
-                <div style={{ marginBottom: '20px' }}>
-                  <h4 style={{ color: 'white', marginBottom: '10px' }}>📊 データ統計</h4>
-                  <p style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
-                    総支出: ¥{lifeState.totalExpense.toLocaleString()}<br />
-                    支出件数: {expenses.length}件<br />
-                    現在のライフステート: {lifeState.state}
-                  </p>
-                </div>
-
-                <div>
-                  <h4 style={{ color: 'white', marginBottom: '10px' }}>🗑️ データ管理</h4>
-                  <p style={{ color: 'rgba(255, 255, 255, 0.8)', marginBottom: '15px' }}>
-                    すべての支出データを削除します。この操作は元に戻せません。
-                  </p>
-                  <button
-                    className="danger-button"
-                    onClick={resetAllData}
-                  >
-                    すべてのデータを削除
-                  </button>
-                </div>
-              </div>
-            </div>
+            <SettingsPage
+              expenses={expenses}
+              lifeState={lifeState}
+              settings={settings}
+              onSettingChange={handleSettingChange}
+              onNestedSettingChange={handleNestedSettingChange}
+              onExportData={exportData}
+              onImportData={importData}
+              onResetAllData={resetAllData}
+            />
           )}
         </main>
       </div>

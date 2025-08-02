@@ -14,13 +14,13 @@ const LifeAnimation: React.FC<LifeAnimationProps> = ({ lifeState }) => {
 
   const getAnimationStyle = () => {
     const baseStyle: React.CSSProperties = {
-      width: '200px',
-      height: '200px',
+      width: 'clamp(150px, 200px, 200px)',
+      height: 'clamp(150px, 200px, 200px)',
       borderRadius: '50%',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      fontSize: '80px',
+      fontSize: 'clamp(60px, 80px, 80px)',
       margin: '20px auto',
       transition: 'all 0.5s ease-in-out',
       position: 'relative',
@@ -116,15 +116,61 @@ const LifeAnimation: React.FC<LifeAnimationProps> = ({ lifeState }) => {
           .message {
             font-size: 18px;
             font-weight: bold;
-            color: white;
+            color: #ffffff;
             margin: 15px 0;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.8);
           }
           
           .expense-info {
             font-size: 14px;
-            color: rgba(255, 255, 255, 0.8);
+            color: rgba(255, 255, 255, 0.9);
             margin: 10px 0;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
+          }
+          
+          /* レスポンシブ対応 */
+          @media (max-width: 768px) {
+            .life-animation {
+              padding: 15px;
+              margin: 15px 0;
+            }
+            
+            .message {
+              font-size: 16px;
+            }
+            
+            .expense-info {
+              font-size: 13px;
+            }
+          }
+          
+          @media (max-width: 480px) {
+            .life-animation {
+              padding: 12px;
+              margin: 10px 0;
+            }
+            
+            .message {
+              font-size: 15px;
+            }
+            
+            .expense-info {
+              font-size: 12px;
+            }
+          }
+          
+          @media (max-width: 360px) {
+            .life-animation {
+              padding: 10px;
+            }
+            
+            .message {
+              font-size: 14px;
+            }
+            
+            .expense-info {
+              font-size: 11px;
+            }
           }
         `}
       </style>
